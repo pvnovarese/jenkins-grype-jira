@@ -50,6 +50,7 @@ pipeline {
             head -c -1 jira_top.json > jira_create_issue.json
             cat jira_body.txt | tr '\\\n' '\\\\\\n' >> jira_create_issue.json
             cat jira_bottom.json >> jira_create_issue.json
+            cat jira_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/3/issue' --user 'paul.novarese@anchore.com:XlhZAhzZQdhiWTK10r9V77CC' --header 'Accept: application/json' --header 'Content-Type: application/json'
         """
         //sh "head -c -1 jira_top.json > jira_create_issue.json"
         //sh "cat jira_top.json > jira_create_issue.json"
