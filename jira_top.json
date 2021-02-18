@@ -8,12 +8,4 @@
     "project": {
       "id": "10000"
     },
-    "description": {
-      "type": "doc",
-      "version": 1,
-      "content": [
-        {
-          "type": "paragraph",
-          "content": [
-            {
-              "text": "
+    "description": "
