@@ -42,7 +42,7 @@ pipeline {
         // that do not have null "fixedInVersion" and output those items'
         // artifact name (i.e. package name) and version to upgrade to.
 
-        sh '${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r .matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.fixedInVersion]|@tsv'
+        sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.fixedInVersion]|@tsv'"
         
         
         // sh 'set -o pipefail ; /var/jenkins_home/grype -f high -q -o json ${REPOSITORY}:${BUILD_NUMBER} | jq .matches[].vulnerability.severity | sort | uniq -c'
