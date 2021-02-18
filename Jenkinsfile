@@ -11,6 +11,12 @@ pipeline {
     DOCKER_HUB = credentials("${HUB_CREDENTIAL}")
     // change repository to your DockerID
     REPOSITORY = "${DOCKER_HUB_USR}/jenkins-grype-demo"
+    TAG = ":devbuild-${BUILD_NUMBER}"   
+    
+    // set path for executables.  I put these in jenkins_home as noted
+    // in README but you may install it somewhere else like /usr/local/bin
+    SYFT_LOCATION = "/var/jenkins_home/syft"
+    GRYPE_LOCATION = "/var/jenkins_home/grype"
   } // end environment
   
   agent any
@@ -25,34 +31,21 @@ pipeline {
     stage('Build image and tag with build number') {
       steps {
         script {
-          dockerImage = docker.build REPOSITORY + ":${BUILD_NUMBER}"
+          dockerImage = docker.build REPOSITORY + TAG
         } // end script
       } // end steps
     } // end stage "build image and tag w build number"
     
     stage('Analyze with grype') {
       steps {
-        // run grype with json output, use jq just to get severities, 
-        // concatenate all onto one line, if we find High or Critical 
-        // vulnerabilities, fail and kill the pipeline
-        // 
-        // old command: 
-        // sh '/var/jenkins_home/grype -o json ${repository}:latest | \
-        // jq .[].vulnerability.severity | tr "\n" " " | \
-        // grep -qvE "Critical|High"'
-        // 
-        // this old command was from before grype had the -f flag (had to do 
-        // some shell gymnastics to get a fail on critical/high vulns by 
-        // concatenating everything onto one line and then using grep -v
-        //
-        // set -o pipefail enables the entire command to return the failure 
-        // in grype and still get the count of vulnerability types
-        // 
-        // you can change this from "high" to "critical" if you want to see 
-        // the command succeed since dvwa doesn't (as of today) have any 
-        // critical vulns in it, just a bunch of highs
-        //
-        sh 'set -o pipefail ; /var/jenkins_home/grype -f high -q -o json ${REPOSITORY}:${BUILD_NUMBER} | jq .matches[].vulnerability.severity | sort | uniq -c'
+        // run grype with json output, in jq, parse matches and select items 
+        // that do not have null "fixedInVersion" and output those items'
+        // artifact name (i.e. package name) and version to upgrade to.
+
+        sh '${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r .matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.fixedInVersion]|@tsv'
+        
+        
+        // sh 'set -o pipefail ; /var/jenkins_home/grype -f high -q -o json ${REPOSITORY}:${BUILD_NUMBER} | jq .matches[].vulnerability.severity | sort | uniq -c'
       } // end steps
     } // end stage "analyze with grype"
     
