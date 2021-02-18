@@ -1,0 +1,36 @@
+{
+  "update": {},
+  "fields": {
+    "summary": "grype-generated ticket",
+    "issuetype": {
+      "id": "10002"
+    },
+    "project": {
+      "id": "10000"
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "We found an image that has fixable vulnerabilities.  Please resolve.",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    },
+    "reporter": {
+      "id": "5fc52f03f2df6c0076c94c94"
+    },
+    "labels": [
+      "grype"
+    ],
+    "assignee": {
+      "id": "5fc52f03f2df6c0076c94c94"
+    }
+  }
+}'
