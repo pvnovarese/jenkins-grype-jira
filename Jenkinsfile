@@ -48,7 +48,7 @@ pipeline {
         
         sh """
             head -c -1 jira_top.json > jira_create_issue.json
-            cat jira_body.txt | tr '\n' '\\n' >> jira_create_issue.json
+            cat jira_body.txt | tr '\\\n' '\\\\\\n' >> jira_create_issue.json
             cat jira_bottom.json >> jira_create_issue.json
         """
         //sh "head -c -1 jira_top.json > jira_create_issue.json"
