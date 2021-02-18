@@ -46,10 +46,11 @@ pipeline {
         
         sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.fixedInVersion]|@tsv' >> jira_body.txt"
         
-        sh "truncate -s -1 jira_top.json > jira_create_issue.json"
-        sh "cat jira_body.txt | | tr '\n' '\\n' >> jira_create_issue.json"
+        //sh "truncate -s -1 jira_top.json > jira_create_issue.json"
+        sh "cat jira_top.json > jira_create_issue.json"
+        sh "cat jira_body.txt | tr '\n' '\\n' >> jira_create_issue.json"
         sh "cat jira_bottom.json >> jira_create_issue.json"
-        //sh "cat jira_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/3/issue' --user 'paul.novarese@anchore.com:XlhZAhzZQdhiWTK10r9V77CC' --header 'Accept: application/json' --header 'Content-Type: application/json'"
+        sh "cat jira_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/3/issue' --user 'paul.novarese@anchore.com:XlhZAhzZQdhiWTK10r9V77CC' --header 'Accept: application/json' --header 'Content-Type: application/json'"
           
         // sh 'set -o pipefail ; /var/jenkins_home/grype -f high -q -o json ${REPOSITORY}:${BUILD_NUMBER} | jq .matches[].vulnerability.severity | sort | uniq -c'
       } // end steps
