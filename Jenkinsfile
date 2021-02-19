@@ -24,7 +24,7 @@ pipeline {
     JIRA_ASSIGNEE = "5fc52f03f2df6c0076c94c94"
     
     // change repository to your DockerID
-    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-grype-jira"
+    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-anchore-jira"
     TAG = ":devbuild-${BUILD_NUMBER}"   
     
     // set path for executables.  I put these in jenkins_home as noted
@@ -71,7 +71,11 @@ pipeline {
           anchore-cli image wait ${REPOSITORY}${TAG}
           anchore-cli --json image vuln ${REPOSITORY}${TAG} all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
         """
+      } // end steps
+    } // end stage "analyze"
 
+     stage('Open Jira Ticket if Needed') {
+      steps {       
         script {
           DESC_BODY_LINES = sh (
             script: 'cat jira_body.txt | wc -l',
@@ -97,7 +101,7 @@ pipeline {
         } //end script
         
       } // end steps
-    } // end stage "analyze"
+    } // end stage "Open Jira"
     
     
     //stage('Re-tag as prod and push stable image to registry') {
