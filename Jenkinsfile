@@ -65,6 +65,14 @@ pipeline {
         // anchore-cli image add
         // anchore-cli image wait
         // anchore-cli --json image vuln pvnovarese/ubuntu_sudo_test:latest all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | .package, .nvd_data[].id, .fix|@tsv'
+
+        script {
+          if ($(wc -l jira_body.txt) != 0) {
+            echo "build json payload to open ticket here"
+          } else {
+            echo "no problems detected"
+          } //end if/else
+        } //end script
         
         // build json paylod to open ticket
         sh """
@@ -86,7 +94,7 @@ pipeline {
           
         // sh 'set -o pipefail ; /var/jenkins_home/grype -f high -q -o json ${REPOSITORY}:${BUILD_NUMBER} | jq .matches[].vulnerability.severity | sort | uniq -c'
       } // end steps
-    } // end stage "analyze with grype"
+    } // end stage "analyze"
     
     
     stage('Re-tag as prod and push stable image to registry') {
