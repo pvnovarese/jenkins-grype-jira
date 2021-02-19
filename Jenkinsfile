@@ -11,7 +11,11 @@ pipeline {
     DOCKER_HUB = credentials("${HUB_CREDENTIAL}")
     
     // jira api key
-    JIRA_API_KEY = credentials('anchore8-api')
+    //JIRA_API_KEY = credentials('anchore8-api')
+    // use credentials to set JIRA_USR and JIRA_PSW
+    JIRA_CREDENTIAL = "jira-anchore8"
+    JIRA = credentials("${JIRA_CREDENTIAL}")
+    JIRA_URL = "anchore8.atlassian.net"
     
     // change repository to your DockerID
     REPOSITORY = "${DOCKER_HUB_USR}/jenkins-grype-jira"
@@ -55,12 +59,14 @@ pipeline {
             cat jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json
             //cat jira_body.txt | tr '\\\n' '\\\\\\n' | tr '\\t' ' ' >> v2_create_issue.json
             cat v2_tail.json >> v2_create_issue.json
+            // JIRA_USR and JIRA_PSW
+            cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
         """
             // cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/2/issue' --user 'paul.novarese@anchore.com:XlhZAhzZQdhiWTK10r9V77CC' --header 'Accept: application/json' --header 'Content-Type: application/json'
         
-            withCredentials([string(credentialsId: 'anchore8-api', variable: 'SECRET')]) { //set SECRET with the credential content
-              sh "cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/2/issue' --user 'paul.novarese@anchore.com:${SECRET}'  --header 'Accept: application/json' --header 'Content-Type: application/json'"
-            }
+            //withCredentials([string(credentialsId: 'anchore8-api', variable: 'SECRET')]) { //set SECRET with the credential content
+            //  sh "cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/2/issue' --user 'paul.novarese@anchore.com:${SECRET}'  --header 'Accept: application/json' --header 'Content-Type: application/json'"
+            //}
         //sh "head -c -1 jira_top.json > jira_create_issue.json"
         //sh "cat jira_top.json > jira_create_issue.json"
         //sh "cat jira_body.txt | tr '\n' '\\n' >> jira_create_issue.json"
