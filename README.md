@@ -9,9 +9,9 @@ We're going to run jenkins in a container to make this fairly self-contained and
 `$ docker run -u root -d --name jenkins --rm -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/jenkins-data:/var/jenkins_home jenkinsci/blueocean
 `
 
-and we'll need to install jq in the jenkins container:
+and we'll need to install jq, python3, and anchore-cli in the jenkins container:
 
-`$ docker exec jenkins apk add jq`
+`$ docker exec jenkins apk add jq python3 && python3 -m ensurepip && pip3 install anchore-cli`
 
 Once Jenkins is up and running, we have just a few things to configure:
 - Get the initial password (`$ docker logs jenkins`)
@@ -23,10 +23,11 @@ Once Jenkins is up and running, we have just a few things to configure:
 	- click “global” and “add credentials”
 	- Use your Docker Hub username and password (get an access token from Docker Hub if you are using multifactor authentication), and set the ID of the credential to “Docker Hub”.
 
-## Part 2: Get Grype
+## Part 2: Get Syft and Grype
 We can download the binaries directly into our bind mount directory we created we spun up the jenkins container:
 
 `curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /tmp/jenkins-data`
+`curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /tmp/jenkins-data`
 
 ## Part 3: Check for CVEs with Grype
 
