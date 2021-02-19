@@ -44,7 +44,7 @@ pipeline {
         // that do not have null "fixedInVersion" and output those items'
         // artifact name (i.e. package name) and version to upgrade to.
         
-        sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.fixedInVersion]|@tsv' >> jira_body.txt"
+        sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.fixedInVersion]|@tsv' >> jira_body.txt"
         
         sh """
             head -c -1 v2_head.json > v2_create_issue.json
