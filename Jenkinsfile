@@ -77,7 +77,7 @@ pipeline {
             script: 'cat jira_body.txt | wc -l',
             returnStdout: true
           ).trim()
-          if (DESC_BODY_LINES != 0) {
+          if (DESC_BODY_LINES != '0') {
             sh """
               echo "jira_body lines: ${DESC_BODY_LINES}"
               echo "building json for jira"
