@@ -82,7 +82,7 @@ pipeline {
               cat v2_tail.json >> v2_create_issue.json
               echo "opening jira ticket"
               cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
-            """"
+            """
           } else {
             echo "no problems detected"
           } //end if/else
