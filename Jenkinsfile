@@ -46,8 +46,11 @@ pipeline {
       steps {
         script {
           dockerImage = docker.build REPOSITORY + TAG
+          docker.withRegistry( '', HUB_CREDENTIAL ) { 
+            dockerImage.push() 
+          }
         } // end script
-      } // end steps
+      } // end steps      
     } // end stage "build image and tag w build number"
     
     stage('Analyze with Anchore') {
