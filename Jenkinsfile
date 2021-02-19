@@ -57,9 +57,7 @@ pipeline {
         sh """
             head -c -1 v2_head.json > v2_create_issue.json
             cat jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json
-            //cat jira_body.txt | tr '\\\n' '\\\\\\n' | tr '\\t' ' ' >> v2_create_issue.json
             cat v2_tail.json >> v2_create_issue.json
-            // JIRA_USR and JIRA_PSW
             cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
         """
             // cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/2/issue' --user 'paul.novarese@anchore.com:XlhZAhzZQdhiWTK10r9V77CC' --header 'Accept: application/json' --header 'Content-Type: application/json'
