@@ -74,11 +74,12 @@ pipeline {
 
         script {
           DESC_BODY_LINES = sh (
-            script: 'wc -l jira_body.txt',
+            script: 'cat jira_body.txt | wc -l',
             returnStdout: true
           ).trim()
           if (DESC_BODY_LINES != 0) {
             sh """
+              echo "jira_body lines: ${DESC_BODY_LINES}"
               echo "building json for jira"
               #head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
               echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Anchore detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": "' | head -c -1 > jira_header.txt
