@@ -56,7 +56,7 @@ pipeline {
         // run grype with json output, in jq, parse matches and select items 
         // that do not have null "fixedInVersion" and output those items'
         // artifact name (i.e. package name) and version to upgrade to.
-        sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.fixedInVersion]|@tsv' >> jira_body.txt"
+        sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt"
         
         // use plugin to analyze image (or we could use syft pipeline scanning mode
         // then pull vunlerabilities with anchore-cli (we could alternatively pull
@@ -72,31 +72,20 @@ pipeline {
             returnStdout: true
           ).trim()
           if (DESC_BODY_LINES != 0) {
-            echo "build json payload to open ticket here"
+            echo "building header for jira ticket descrpition field"
+            echo '${REPOSITORY}${TAG} has fixable issues:' > jira_header.txt
+            echo >> jira_header.txt
+            echo "building json for jira"
+            head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
+            cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
+            cat v2_tail.json >> v2_create_issue.json
+            echo "opening jira ticket"
+            cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
           } else {
             echo "no problems detected"
           } //end if/else
         } //end script
         
-        // build json paylod to open ticket
-        sh """
-            head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
-            cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
-            cat v2_tail.json >> v2_create_issue.json
-            cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
-        """
-            // cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/2/issue' --user 'paul.novarese@anchore.com:XlhZAhzZQdhiWTK10r9V77CC' --header 'Accept: application/json' --header 'Content-Type: application/json'
-        
-            //withCredentials([string(credentialsId: 'anchore8-api', variable: 'SECRET')]) { //set SECRET with the credential content
-            //  sh "cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/2/issue' --user 'paul.novarese@anchore.com:${SECRET}'  --header 'Accept: application/json' --header 'Content-Type: application/json'"
-            //}
-        //sh "head -c -1 jira_top.json > jira_create_issue.json"
-        //sh "cat jira_top.json > jira_create_issue.json"
-        //sh "cat jira_body.txt | tr '\n' '\\n' >> jira_create_issue.json"
-        //sh "cat jira_bottom.json >> jira_create_issue.json"
-        //sh "cat jira_create_issue.json | tr '\n' '\\n | curl --data-binary @- --request POST --url 'https://anchore8.atlassian.net/rest/api/3/issue' --user 'paul.novarese@anchore.com:XlhZAhzZQdhiWTK10r9V77CC' --header 'Accept: application/json' --header 'Content-Type: application/json'"
-          
-        // sh 'set -o pipefail ; /var/jenkins_home/grype -f high -q -o json ${REPOSITORY}:${BUILD_NUMBER} | jq .matches[].vulnerability.severity | sort | uniq -c'
       } // end steps
     } // end stage "analyze"
     
