@@ -66,11 +66,11 @@ pipeline {
         // anchore-cli image wait
         // anchore-cli --json image vuln pvnovarese/ubuntu_sudo_test:latest all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | .package, .nvd_data[].id, .fix|@tsv'
 
-        DESC_BODY_LINES = sh (
-          script: 'wc -l jira_body.txt',
-          returnStdout: true
-        ).trim()
         script {
+          DESC_BODY_LINES = sh (
+            script: 'wc -l jira_body.txt',
+            returnStdout: true
+          ).trim()
           if (DESC_BODY_LINES != 0) {
             echo "build json payload to open ticket here"
           } else {
