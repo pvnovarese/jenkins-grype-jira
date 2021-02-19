@@ -30,6 +30,10 @@ We can download the binaries directly into our bind mount directory we created w
 `curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /tmp/jenkins-data`
 `curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /tmp/jenkins-data`
 
+## STOP READING HERE
+(I haven't fixed the rest of this yet)
+
+
 ## Part 3: Check for CVEs with Grype
 
 - Fork this repo
