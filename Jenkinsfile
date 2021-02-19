@@ -45,19 +45,31 @@ pipeline {
       } // end steps
     } // end stage "build image and tag w build number"
     
-    stage('Analyze with grype') {
+    stage('Analyze with Anchore') {
       steps {
-        sh "echo '${REPOSITORY}${TAG} has fixable issues:' > jira_body.txt"
-        sh "echo >> jira_body.txt"
+        // build header for jira ticket description field
+        sh """
+          echo '${REPOSITORY}${TAG} has fixable issues:' > jira_header.txt
+          echo >> jira_header.txt
+        """
+        
         // run grype with json output, in jq, parse matches and select items 
         // that do not have null "fixedInVersion" and output those items'
         // artifact name (i.e. package name) and version to upgrade to.
-        
         sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.fixedInVersion]|@tsv' >> jira_body.txt"
         
+        // use plugin to analyze image (or we could use syft pipeline scanning mode
+        // then pull vunlerabilities with anchore-cli (we could alternatively pull
+        // policy violations instead), build payload to open a jira ticket to fix
+        // any problems
+        // anchore-cli image add
+        // anchore-cli image wait
+        // anchore-cli --json image vuln pvnovarese/ubuntu_sudo_test:latest all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | .package, .nvd_data[].id, .fix|@tsv'
+        
+        // build json paylod to open ticket
         sh """
-            head -c -1 v2_head.json > v2_create_issue.json
-            cat jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json
+            head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
+            cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
             cat v2_tail.json >> v2_create_issue.json
             cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
         """
