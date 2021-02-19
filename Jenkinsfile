@@ -47,11 +47,6 @@ pipeline {
     
     stage('Analyze with Anchore') {
       steps {
-        // build header for jira ticket description field
-        sh """
-          echo '${REPOSITORY}${TAG} has fixable issues:' > jira_header.txt
-          echo >> jira_header.txt
-        """
         
         // run grype with json output, in jq, parse matches and select items 
         // that do not have null "fixedInVersion" and output those items'
@@ -62,9 +57,12 @@ pipeline {
         // then pull vunlerabilities with anchore-cli (we could alternatively pull
         // policy violations instead), build payload to open a jira ticket to fix
         // any problems
-        // anchore-cli image add
-        // anchore-cli image wait
-        // anchore-cli --json image vuln pvnovarese/ubuntu_sudo_test:latest all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | .package, .nvd_data[].id, .fix|@tsv'
+        sh """
+          echo "scanning ${REPOSITORY}:${TAG}
+          anchore-cli image add --force --dockerfile ./Dockerfile ${REPOSITORY}${TAG}
+          anchore-cli image wait ${REPOSITORY}${TAG}
+          anchore-cli --json image vuln ${REPOSITORY}${TAG} all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
+        """
 
         script {
           DESC_BODY_LINES = sh (
