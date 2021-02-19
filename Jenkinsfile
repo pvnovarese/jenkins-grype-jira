@@ -56,7 +56,7 @@ pipeline {
         // run grype with json output, in jq, parse matches and select items 
         // that do not have null "fixedInVersion" and output those items'
         // artifact name (i.e. package name) and version to upgrade to.
-        sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt"
+        sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.severity, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt"
         
         // use plugin to analyze image (or we could use syft pipeline scanning mode
         // then pull vunlerabilities with anchore-cli (we could alternatively pull
@@ -92,21 +92,22 @@ pipeline {
     } // end stage "analyze"
     
     
-    stage('Re-tag as prod and push stable image to registry') {
-      steps {
-        script {
-          docker.withRegistry('', HUB_CREDENTIAL) {
-            dockerImage.push('prod') 
-            // dockerImage.push takes the argument as a new tag for the image before pushing
-          }
-        } // end script
-      } // end steps
-    } // end stage "retag as prod"
+    //stage('Re-tag as prod and push stable image to registry') {
+    //  steps {
+    //    script {
+    //      docker.withRegistry('', HUB_CREDENTIAL) {
+    //        dockerImage.push('prod') 
+    //        // dockerImage.push takes the argument as a new tag for the image before pushing
+    //      }
+    //    } // end script
+    //  } // end steps
+    //} // end stage "retag as prod"
 
     stage('Clean up') {
       // delete the images locally
       steps {
-        sh 'docker rmi ${REPOSITORY}${TAG} ${REPOSITORY}:prod'
+        sh 'docker rmi ${REPOSITORY}${TAG}'
+        // ${REPOSITORY}:prod'
       } // end steps
     } // end stage "clean up"
 
