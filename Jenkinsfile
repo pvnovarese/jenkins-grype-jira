@@ -72,15 +72,17 @@ pipeline {
             returnStdout: true
           ).trim()
           if (DESC_BODY_LINES != 0) {
-            echo "building header for jira ticket descrpition field"
-            echo '${REPOSITORY}${TAG} has fixable issues:' > jira_header.txt
-            echo >> jira_header.txt
-            echo "building json for jira"
-            head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
-            cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
-            cat v2_tail.json >> v2_create_issue.json
-            echo "opening jira ticket"
-            cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
+            sh """
+              echo "building header for jira ticket descrpition field"
+              echo '${REPOSITORY}${TAG} has fixable issues:' > jira_header.txt
+              echo >> jira_header.txt
+              echo "building json for jira"
+              head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
+              cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' >> v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
+              cat v2_tail.json >> v2_create_issue.json
+              echo "opening jira ticket"
+              cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
+            """"
           } else {
             echo "no problems detected"
           } //end if/else
