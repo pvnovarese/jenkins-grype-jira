@@ -10,7 +10,7 @@ pipeline {
     // use credentials to set DOCKER_HUB_USR and DOCKER_HUB_PSW
     DOCKER_HUB = credentials("${HUB_CREDENTIAL}")
     // change repository to your DockerID
-    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-grype-demo"
+    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-grype-jira"
     TAG = ":devbuild-${BUILD_NUMBER}"   
     
     // set path for executables.  I put these in jenkins_home as noted
