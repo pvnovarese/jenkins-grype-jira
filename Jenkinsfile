@@ -67,7 +67,7 @@ pipeline {
         // any problems
         sh """
           echo "scanning ${REPOSITORY}:${TAG}"
-          anchore-cli image add --force --dockerfile ./Dockerfile ${REPOSITORY}${TAG}
+          anchore-cli image add ${REPOSITORY}${TAG}
           anchore-cli image wait ${REPOSITORY}${TAG}
           anchore-cli --json image vuln ${REPOSITORY}${TAG} all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
         """
@@ -81,7 +81,7 @@ pipeline {
             sh """
               echo "building json for jira"
               #head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
-              echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Anchore detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": ' > jira_header.txt
+              echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Anchore detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": "' | head -c -1 > jira_header.txt
               echo '${REPOSITORY}${TAG} has fixable issues:' >> jira_header.txt
               echo >> jira_header.txt
               cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' > v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
