@@ -58,7 +58,7 @@ pipeline {
         // policy violations instead), build payload to open a jira ticket to fix
         // any problems
         sh """
-          echo "scanning ${REPOSITORY}:${TAG}
+          echo "scanning ${REPOSITORY}:${TAG}"
           anchore-cli image add --force --dockerfile ./Dockerfile ${REPOSITORY}${TAG}
           anchore-cli image wait ${REPOSITORY}${TAG}
           anchore-cli --json image vuln ${REPOSITORY}${TAG} all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
