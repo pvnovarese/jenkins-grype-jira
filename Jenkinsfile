@@ -10,12 +10,13 @@ pipeline {
     // use credentials to set DOCKER_HUB_USR and DOCKER_HUB_PSW
     DOCKER_HUB = credentials("${HUB_CREDENTIAL}")
     
-    // jira api key
-    //JIRA_API_KEY = credentials('anchore8-api')
     // use credentials to set JIRA_USR and JIRA_PSW
     JIRA_CREDENTIAL = "jira-anchore8"
     JIRA = credentials("${JIRA_CREDENTIAL}")
     JIRA_URL = "anchore8.atlassian.net"
+    
+    JIRA_PROJECT = "10000"
+    JIRA_ASSIGNEE = "5fc52f03f2df6c0076c94c94"
     
     // change repository to your DockerID
     REPOSITORY = "${DOCKER_HUB_USR}/jenkins-grype-jira"
