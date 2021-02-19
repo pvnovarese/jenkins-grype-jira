@@ -1,6 +1,6 @@
-# Demo: Integrating Jenkins with Grype
+# Demo: Integrating Anchore, Jenkins, and Jira
 
-This is a very rough demo of integrating Grype with Jenkins.  If you don't know what Grype is, read up here: https://github.com/anchore/grype
+This is a very rough demo of integrating Jenkins, Anchore, and Jira.  
 
 ## Part 1: Jenkins Setup
 
@@ -24,6 +24,7 @@ Once Jenkins is up and running, we have just a few things to configure:
 	- Use your Docker Hub username and password (get an access token from Docker Hub if you are using multifactor authentication), and set the ID of the credential to “Docker Hub”.
 
 ## Part 2: Get Syft and Grype
+(optional, the Jenkinsfile only uses anchore-cli but we can split some of this stuff out using Anchore toolbox)
 We can download the binaries directly into our bind mount directory we created we spun up the jenkins container:
 
 `curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /tmp/jenkins-data`
