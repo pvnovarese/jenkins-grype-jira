@@ -11,9 +11,9 @@ pipeline {
     DOCKER_HUB = credentials("${HUB_CREDENTIAL}")
     
     // user/pass/url for anchore-cli
-    ANCHORE_CLI_USER=demo-user
-    ANCHORE_CLI_PASS=foobar
-    ANCHORE_CLI_URL=http://anchore-priv.novarese.net:8228/v1/
+    ANCHORE_CLI_USER = "demo-user"
+    ANCHORE_CLI_PASS = "foobar"
+    ANCHORE_CLI_URL = "http://anchore-priv.novarese.net:8228/v1/"
     
     // use credentials to set JIRA_USR and JIRA_PSW
     JIRA_CREDENTIAL = "jira-anchore8"
