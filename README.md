@@ -1,6 +1,6 @@
-# Demo: Integrating Anchore, Jenkins, and Jira
+# Demo: Integrating Anchore, Jenkins, and Jira (for Vulnerabilties)
 
-This is a very rough demo of integrating Jenkins, Anchore, and Jira.  
+This is a very rough demo of integrating Jenkins, Anchore, and Jira.  This repo will open Jira tickets for vulnerabilties that have reported fixes in the images we scan. 
 
 ## Part 1: Jenkins Setup
 
