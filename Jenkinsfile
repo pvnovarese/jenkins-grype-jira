@@ -17,7 +17,7 @@ pipeline {
     // use credentials to set ANCHORE_USR and ANCHORE_PSW
     ANCHORE = credentials("${ANCHORE_CREDENTIAL}")
     
-    // user/pass/url for anchore-cli
+    // url for anchore-cli
     ANCHORE_CLI_URL = "http://anchore-priv.novarese.net:8228/v1/"
     
     // use credentials to set JIRA_USR and JIRA_PSW
@@ -61,14 +61,14 @@ pipeline {
     stage('Analyze with Anchore') {
       steps {
         sh 'echo "scanning ${REPOSITORY}:${TAG}"'
+        sh 'anchore-cli --url ${ANCHORE_CLI_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image add ${REPOSITORY}${TAG}'
         //     
         // analyze image with anchore-cli. pull vunlerabilities,
         // and build payload to open a jira ticket to fix any problems.
         //
         sh """
-          anchore-cli --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image add ${REPOSITORY}${TAG}
-          anchore-cli --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image wait ${REPOSITORY}${TAG}
-          anchore-cli --json --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image vuln ${REPOSITORY}${TAG} all | \
+          anchore-cli --url ${ANCHORE_CLI_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image wait ${REPOSITORY}${TAG}
+          anchore-cli --json --url ${ANCHORE_CLI_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image vuln ${REPOSITORY}${TAG} all | \
             jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
         """
         //
