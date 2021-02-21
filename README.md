@@ -22,6 +22,8 @@ Once Jenkins is up and running, we have just a few things to configure:
 	- go to manage jenkins -> manage credentials
 	- click “global” and “add credentials”
 	- Use your Docker Hub username and password (get an access token from Docker Hub if you are using multifactor authentication), and set the ID of the credential to “Docker Hub”.
+- Create a credential with your Jira username and password (mine is called "jira-anchore8" - you may need to edit the jenkinsfile to relfect your credential's name)
+- Create a credential with your Anchore Engine/Enterprise username and password (mine is called AnchoreJenkinsUser). 
 
 ## Part 2: Get Syft and Grype
 (optional, the Jenkinsfile only uses anchore-cli but we can split some of this stuff out using Anchore toolbox)
