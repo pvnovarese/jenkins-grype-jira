@@ -60,12 +60,12 @@ pipeline {
     
     stage('Analyze with Anchore') {
       steps {
+        sh 'echo "scanning ${REPOSITORY}:${TAG}"'
         //     
         // analyze image with anchore-cli. pull vunlerabilities,
         // and build payload to open a jira ticket to fix any problems.
         //
         sh """
-          echo "scanning ${REPOSITORY}:${TAG}"
           anchore-cli --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image add ${REPOSITORY}${TAG}
           anchore-cli --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image wait ${REPOSITORY}${TAG}
           anchore-cli --json --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image vuln ${REPOSITORY}${TAG} all | \
