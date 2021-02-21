@@ -61,10 +61,9 @@ pipeline {
     stage('Analyze with Anchore') {
       steps {
         //     
-        // use plugin to analyze image (or we could use syft pipeline scanning mode
-        // then pull vunlerabilities with anchore-cli (we could alternatively pull
-        // policy violations instead), build payload to open a jira ticket to fix
-        // any problems
+        // analyze image with anchore-cli. pull vunlerabilities,
+        // and build payload to open a jira ticket to fix any problems.
+        //
         sh """
           echo "scanning ${REPOSITORY}:${TAG}"
           anchore-cli --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image add ${REPOSITORY}${TAG}
