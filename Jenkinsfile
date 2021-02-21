@@ -55,12 +55,7 @@ pipeline {
     
     stage('Analyze with Anchore') {
       steps {
-        
-        // run grype with json output, in jq, parse matches and select items 
-        // that do not have null "fixedInVersion" and output those items'
-        // artifact name (i.e. package name) and version to upgrade to.
-        // sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.severity, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt"
-        
+        //     
         // use plugin to analyze image (or we could use syft pipeline scanning mode
         // then pull vunlerabilities with anchore-cli (we could alternatively pull
         // policy violations instead), build payload to open a jira ticket to fix
@@ -71,6 +66,13 @@ pipeline {
           anchore-cli image wait ${REPOSITORY}${TAG}
           anchore-cli --json image vuln ${REPOSITORY}${TAG} all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
         """
+        //
+        // you can also do something similar with grype, in this case we
+        // want to use jq to select items that do not have null "fixedInVersion" 
+        // and output those items' artifact name (i.e. package name) and version 
+        // to upgrade to.
+        // sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.severity, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt"
+        //
       } // end steps
     } // end stage "analyze"
 
@@ -83,14 +85,11 @@ pipeline {
           ).trim()
           if (DESC_BODY_LINES != '0') {
             sh """
-              echo "jira_body lines: ${DESC_BODY_LINES}"
-              echo "building json for jira"
-              #head -c -1 v2_head.json > v2_create_issue.json      # remove last byte (newline)
+              ### building json for jira
               echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Anchore detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": "' | head -c -1 > jira_header.txt
               echo '${REPOSITORY}${TAG} has fixable issues:' >> jira_header.txt
               echo >> jira_header.txt
               cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' > v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
-              #cat v2_tail.json >> v2_create_issue.json
               echo '" } }' >> v2_create_issue.json
               echo "opening jira ticket"
               cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
