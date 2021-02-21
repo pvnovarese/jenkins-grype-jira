@@ -24,7 +24,7 @@ pipeline {
     JIRA_ASSIGNEE = "5fc52f03f2df6c0076c94c94"
     
     // change repository to your DockerID
-    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-anchore-jira"
+    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-anchore-jira-vuln"
     TAG = ":devbuild-${BUILD_NUMBER}"   
     
     // set path for executables.  I put these in jenkins_home as noted
