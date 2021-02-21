@@ -10,9 +10,14 @@ pipeline {
     // use credentials to set DOCKER_HUB_USR and DOCKER_HUB_PSW
     DOCKER_HUB = credentials("${HUB_CREDENTIAL}")
     
+    
+    // we'll need the anchore credential to pass the user
+    // and password to syft so it can upload the results
+    ANCHORE_CREDENTIAL = "AnchoreJenkinsUser"
+    // use credentials to set ANCHORE_USR and ANCHORE_PSW
+    ANCHORE = credentials("${ANCHORE_CREDENTIAL}")
+    
     // user/pass/url for anchore-cli
-    ANCHORE_CLI_USER = "demo-user"
-    ANCHORE_CLI_PASS = "foobar"
     ANCHORE_CLI_URL = "http://anchore-priv.novarese.net:8228/v1/"
     
     // use credentials to set JIRA_USR and JIRA_PSW
@@ -62,9 +67,10 @@ pipeline {
         // any problems
         sh """
           echo "scanning ${REPOSITORY}:${TAG}"
-          anchore-cli image add ${REPOSITORY}${TAG}
-          anchore-cli image wait ${REPOSITORY}${TAG}
-          anchore-cli --json image vuln ${REPOSITORY}${TAG} all | jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
+          anchore-cli --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image add ${REPOSITORY}${TAG}
+          anchore-cli --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image wait ${REPOSITORY}${TAG}
+          anchore-cli --json --url ${ANCHORE_URL} --u {ANCHORE_USER} --p ${ANCHORE_PASS} image vuln ${REPOSITORY}${TAG} all | \
+            jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
         """
         //
         // you can also do something similar with grype, in this case we
