@@ -60,13 +60,12 @@ pipeline {
     
     stage('Analyze with Anchore') {
       steps {
-        sh 'echo "scanning ${REPOSITORY}:${TAG}"'
-        sh 'anchore-cli --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image add ${REPOSITORY}${TAG}'
         //     
         // analyze image with anchore-cli. pull vunlerabilities,
         // and build payload to open a jira ticket to fix any problems.
         //
         sh """
+          anchore-cli --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image add ${REPOSITORY}${TAG}
           anchore-cli --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image wait ${REPOSITORY}${TAG}
           anchore-cli --json --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image vuln ${REPOSITORY}${TAG} all | \
             jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
