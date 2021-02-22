@@ -56,5 +56,5 @@ Jenkins will check out the repo and build an image using the provided Dockerfile
 - Remove the jenkins-data directory from /tmp
 	`pvn@gyarados /home/pvn> sudo rm -rf /tmp/jenkins-data/`
 - Remove all demo images from your local machine:
-	`pvn@gyarados /home/pvn> docker image ls | grep -E "jenkins-grype-demo|jenkins-syft-demo" | awk '{print $3}' | xargs docker image rm -f`
+	`pvn@gyarados /home/pvn> docker image ls | grep -E "jenkins-anchore-jira-vuln" | awk '{print $3}' | xargs docker image rm -f`
 
