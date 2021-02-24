@@ -65,10 +65,23 @@ pipeline {
         // and build payload to open a jira ticket to fix any problems.
         //
         sh """
+          ## queue image for analysis
           anchore-cli --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image add ${REPOSITORY}${TAG}
+          ## wait for analysis to complete
           anchore-cli --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image wait ${REPOSITORY}${TAG}
+          ## pull vulnerability report and wash it through jq
           anchore-cli --json --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image vuln ${REPOSITORY}${TAG} all | \
-            jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > jira_body.txt
+            jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > xxx_jira_body.txt
+          ##
+          ## this jq filter isn't too badd because the vulnerabilty report is pretty small
+          ## and straightfowrward (compared to a full evaluation which can include an entire
+          ## policy bundle)...
+          ## the jq filter essentially selects the vulnerabilities that don't have "None"
+          ## listed as the fix (i.e. the ones where we have a known fix we could apply
+          ## today) and outputs the package, vunlerability identifier (usually the CVE
+          ## number, or security advisory number for vendor advisories), the severity,
+          ## and the fix (usually a package version) and formats them all as tab seperated.
+          ##
         """
         //
         // you can also do something similar with grype, in this case we
@@ -83,20 +96,26 @@ pipeline {
      stage('Open Jira Ticket if Needed') {
       steps {       
         script {
+          //
+          // this groovy script checks the number of lines in xxx_jira_body.txt, and 
+          // if it's not zero, then it opens a jira ticket.  I'm not sure why I did it
+          // this way, it would make more sense to just put the wc -l and the if/then
+          // logic in the main shell section with the rest of it but here we are.
+          //
           DESC_BODY_LINES = sh (
-            script: 'cat jira_body.txt | wc -l',
+            script: 'cat xxx_jira_body.txt | wc -l',
             returnStdout: true
           ).trim()
           if (DESC_BODY_LINES != '0') {
             sh """
               ### building json for jira
-              echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Anchore detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": "' | head -c -1 > jira_header.txt
-              echo '${REPOSITORY}${TAG} has fixable issues:' >> jira_header.txt
-              echo >> jira_header.txt
-              cat jira_header.txt jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' > v2_create_issue.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
-              echo '" } }' >> v2_create_issue.json
+              echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Anchore detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": "' | head -c -1 > xxx_jira_header.txt
+              echo '${REPOSITORY}${TAG} has fixable issues:' >> xxx_jira_header.txt
+              echo >> xxx_jira_header.txt
+              cat xxx_jira_header.txt xxx_jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' > xxx_jira_v2_payload.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
+              echo '" } }' >> xxx_jira_v2_payload.json
               echo "opening jira ticket"
-              cat v2_create_issue.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
+              cat xxx_jira_v2_payload.json | curl --data-binary @- --request POST --url 'https://${JIRA_URL}/rest/api/2/issue' --user '${JIRA_USR}:${JIRA_PSW}'  --header 'Accept: application/json' --header 'Content-Type: application/json'
             """
           } else {
             echo "no problems detected"
