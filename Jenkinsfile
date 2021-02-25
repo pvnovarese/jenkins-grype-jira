@@ -82,7 +82,7 @@ pipeline {
           // locally with grype
           // docker.withRegistry( '', HUB_CREDENTIAL ) { 
           //   dockerImage.push() 
-          }
+          // }
         } // end script
       } // end steps      
     } // end stage "build image and tag w build number"            
