@@ -10,30 +10,56 @@ pipeline {
     // use credentials to set DOCKER_HUB_USR and DOCKER_HUB_PSW
     DOCKER_HUB = credentials("${HUB_CREDENTIAL}")
     
-    
-    // we'll need the anchore credential to pass the user
-    // and password to syft so it can upload the results
-    ANCHORE_CREDENTIAL = "AnchoreJenkinsUser"
-    // use credentials to set ANCHORE_USR and ANCHORE_PSW
-    ANCHORE = credentials("${ANCHORE_CREDENTIAL}")
-    
-    // url for anchore-cli
-    ANCHORE_CLI_URL = "http://anchore-priv.novarese.net:8228/v1/"
+    // // we don't need this anchore credential for grype usage,
+    // // but you could use this if you wanted to replace grype
+    // // with anchore-cli and anchore engine.
+    // // cf. https://github.com/pvnovarese/jenkins-anchore-jira-vuln/
+    //
+    // // we'll need the anchore credential to pass the user
+    // // and password to syft so it can upload the results
+    // ANCHORE_CREDENTIAL = "AnchoreJenkinsUser"
+    // // use credentials to set ANCHORE_USR and ANCHORE_PSW
+    // ANCHORE = credentials("${ANCHORE_CREDENTIAL}")
+    // 
+    // // url for anchore-cli
+    // ANCHORE_CLI_URL = "http://anchore-priv.novarese.net:8228/v1/"
     
     // use credentials to set JIRA_USR and JIRA_PSW
-    JIRA_CREDENTIAL = "jira-anchore8"
+    // NOTE that this user will be the reporter of record for any
+    // tickets we create, and the password for this credential should
+    // be an API key, not the normal authentication password for this
+    // user.
+    JIRA_CREDENTIAL = "jira-cred"
     JIRA = credentials("${JIRA_CREDENTIAL}")
-    JIRA_URL = "anchore8.atlassian.net"
+    // name of credential (secret text) with jira URL
+    JIRA_URL = "jira-url"
     
+    // These are kind of a pain to figure out, you can probably google it
+    // but I should document it here, the PROJECT is a numeric ID jira uses
+    // internally instead of the text key that most humans see.  Likewise,
+    // ASSIGNEE is an internal ID instead of the email address or plain text
+    // name that you would normally see.
+    // The reporter for the ticket will be set according to the owner of the 
+    // credentials we use to authenticate to the api endpoint so we don't 
+    // need to worry about that.
+    //
     JIRA_PROJECT = "10000"
     JIRA_ASSIGNEE = "5fc52f03f2df6c0076c94c94"
     
-    // change repository to your DockerID
-    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-anchore-jira-vuln"
+    // you can mess with these if you want, it doesn't really matter
+    // unless you decide to uncomment the parts below where we push 
+    // images to docker hub.  Since we're using grype locally, we don't
+    // need to do that in order to analyze the images as we would if 
+    // we were using anchore engine, but you might want to do it if
+    // (e.g.) an image has zero vulnerabilities or whatever criteria
+    // you want to use.
+    REPOSITORY = "${DOCKER_HUB_USR}/jenkins-grype-jira"
     TAG = ":devbuild-${BUILD_NUMBER}"   
     
     // set path for executables.  I put these in jenkins_home as noted
-    // in README but you may install it somewhere else like /usr/local/bin
+    // in README just for convenience in making this example simple
+    // to get going quickly, but this is not really a great practice 
+    // in general and you may install somewhere else like /usr/local/bin
     SYFT_LOCATION = "/var/jenkins_home/syft"
     GRYPE_LOCATION = "/var/jenkins_home/grype"
   } // end environment
@@ -61,34 +87,18 @@ pipeline {
     stage('Analyze with Anchore') {
       steps {
         //     
-        // analyze image with anchore-cli. pull vunlerabilities,
-        // and build payload to open a jira ticket to fix any problems.
+        // analyze image with grype and get vulnerabilites in json format,
+        // then use jq to select only vulns with a published fix.  we'll 
+        // stash this in a temp file for now.
         //
         sh """
-          ## queue image for analysis
-          anchore-cli --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image add ${REPOSITORY}${TAG}
-          ## wait for analysis to complete
-          anchore-cli --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image wait ${REPOSITORY}${TAG}
-          ## pull vulnerability report and wash it through jq
-          anchore-cli --json --url ${ANCHORE_CLI_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image vuln ${REPOSITORY}${TAG} all | \
-            jq -r '.vulnerabilities[] | select(.fix | . != "None") | [.package, .vuln, .severity, .fix]|@tsv' > xxx_jira_body.txt
-          ##
-          ## this jq filter isn't too badd because the vulnerabilty report is pretty small
-          ## and straightfowrward (compared to a full evaluation which can include an entire
-          ## policy bundle)...
-          ## the jq filter essentially selects the vulnerabilities that don't have "None"
-          ## listed as the fix (i.e. the ones where we have a known fix we could apply
-          ## today) and outputs the package, vunlerability identifier (usually the CVE
-          ## number, or security advisory number for vendor advisories), the severity,
-          ## and the fix (usually a package version) and formats them all as tab seperated.
-          ##
+          ${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | \
+          jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.severity, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt
         """
-        //
-        // you can also do something similar with grype, in this case we
-        // want to use jq to select items that do not have null "fixedInVersion" 
-        // and output those items' artifact name (i.e. package name) and version 
-        // to upgrade to.
-        // sh "${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.severity, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt"
+        // 
+        // the jq filter selects items that do not have null "fixedInVersion" 
+        // and outputs those items' artifact name (i.e. package name), the
+        // vuln ID (e.g. CVE number), the severity, and version to upgrade to.
         //
       } // end steps
     } // end stage "analyze"
