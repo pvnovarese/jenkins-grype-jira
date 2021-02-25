@@ -153,7 +153,7 @@ pipeline {
     stage('Clean up') {
       // delete the images locally
       steps {
-        sh 'docker rmi ${REPOSITORY}${TAG}'
+        sh '#docker rmi ${REPOSITORY}${TAG}'
         // ${REPOSITORY}:prod'
       } // end steps
     } // end stage "clean up"
