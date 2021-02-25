@@ -24,16 +24,16 @@ pipeline {
     // // url for anchore-cli
     // ANCHORE_CLI_URL = "http://anchore-priv.novarese.net:8228/v1/"
     
-    // use credentials to set JIRA_USR and JIRA_PSW
+    // use credentials to set JIRA_USR and JIRA_PSW by reading
+    // the credential with the id "jira-cred"
     // NOTE that this user will be the reporter of record for any
     // tickets we create, and the password for this credential should
     // be an API key, not the normal authentication password for this
     // user.
-    JIRA_CREDENTIAL = "jira-cred"
-    JIRA = credentials("${JIRA_CREDENTIAL}")
+    JIRA = credentials('jira-cred')
     // name of credential (secret text) with jira URL
-    JIRA_URL = "jira-url"
-    
+    JIRA_URL = credentials('jira-url')
+        
     // These are kind of a pain to figure out, you can probably google it
     // but I should document it here, the PROJECT is a numeric ID jira uses
     // internally instead of the text key that most humans see.  Likewise,
@@ -77,14 +77,17 @@ pipeline {
       steps {
         script {
           dockerImage = docker.build REPOSITORY + TAG
-          docker.withRegistry( '', HUB_CREDENTIAL ) { 
-            dockerImage.push() 
+          // at this point we could push to docker hub
+          // but it's not necessary since we're scanning
+          // locally with grype
+          // docker.withRegistry( '', HUB_CREDENTIAL ) { 
+          //   dockerImage.push() 
           }
         } // end script
       } // end steps      
-    } // end stage "build image and tag w build number"
+    } // end stage "build image and tag w build number"            
     
-    stage('Analyze with Anchore') {
+    stage('Analyze with Grype') {
       steps {
         //     
         // analyze image with grype and get vulnerabilites in json format,
