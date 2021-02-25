@@ -122,7 +122,7 @@ pipeline {
           if (DESC_BODY_LINES != '0') {
             sh """
               ### building json for jira
-              echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Anchore detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": "' | head -c -1 > xxx_jira_header.txt
+              echo '{ "fields": { "project": { "id": "${JIRA_PROJECT}" }, "issuetype": { "id": "10002" }, "summary": "Grype detected fixable vulnerabilities", "reporter": { "id": "${JIRA_ASSIGNEE}" }, "labels": [ "anchore" ], "assignee": { "id": "${JIRA_ASSIGNEE}" }, "description": "' | head -c -1 > xxx_jira_header.txt
               echo '${REPOSITORY}${TAG} has fixable issues:' >> xxx_jira_header.txt
               echo >> xxx_jira_header.txt
               cat xxx_jira_header.txt xxx_jira_body.txt | sed -e :a -e '\$!N;s/\\n/\\\\n/;ta' | tr '\\t' '  ' | tr -d '\\\n' > xxx_jira_v2_payload.json  # escape newlines, convert tabs to spaces, remove any remaining newlines
@@ -153,7 +153,7 @@ pipeline {
     stage('Clean up') {
       // delete the images locally
       steps {
-        sh '#docker rmi ${REPOSITORY}${TAG}'
+        sh 'docker rmi ${REPOSITORY}${TAG}'
         // ${REPOSITORY}:prod'
       } // end steps
     } // end stage "clean up"
