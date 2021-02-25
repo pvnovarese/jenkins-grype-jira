@@ -92,11 +92,11 @@ pipeline {
         //     
         // analyze image with grype and get vulnerabilites in json format,
         // then use jq to select only vulns with a published fix.  we'll 
-        // stash this in a temp file for now.
+        // stash this in a temp file (xxx_jira_body.txt) for now.
         //
         sh """
           ${GRYPE_LOCATION} -o json ${REPOSITORY}${TAG} | \
-          jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.severity, .vulnerability.fixedInVersion]|@tsv' > jira_body.txt
+          jq -r '.matches[] | select(.vulnerability.fixedInVersion | . != null ) | [.artifact.name, .vulnerability.id, .vulnerability.severity, .vulnerability.fixedInVersion]|@tsv' > xxx_jira_body.txt
         """
         // 
         // the jq filter selects items that do not have null "fixedInVersion" 
