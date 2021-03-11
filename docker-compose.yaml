@@ -23,7 +23,7 @@ volumes:
 # use this network section for standalone deployment,
 # but remember to change the network section of each service
 networks:
-  jenkins:
+  jenkins-network:
     driver: bridge
 
 # or, join the network that the anchore-engine deployment is using
@@ -39,7 +39,7 @@ services:
     ports:
       - "2376:2376"
     networks:
-      jenkins:
+      jenkins-network:
         aliases:
           - docker
     volumes:
@@ -58,7 +58,7 @@ services:
       - "8080:8080"
       - "50000:50000"
     networks:
-      - jenkins
+      - jenkins-network
     volumes:
       - jenkins-data-volume/:/var/jenkins_home
       - jenkins-docker-certs-volume/:/certs/client
