@@ -1,0 +1,69 @@
+version: '3'
+
+###
+# this compose file will start up a self-contained jenkins instance
+# on localhost:8080 and spin up a docker-in-docker container to
+# allow us to build images without trashing our host docker instance.
+# this is essentially a disposable build environment, you can just 
+# throw it away and start over anytime.
+# 
+# questions?  
+# pvn@novarese.net 
+# twitter: @pvn 
+# gh: @pvnovarese
+#
+###
+
+volumes:
+  jenkins-data-volume:
+    external: false
+  jenkins-docker-certs-volume:
+    external: false
+
+# use this network section for standalone deployment,
+# but remember to change the network section of each service
+networks:
+  jenkins:
+    driver: bridge
+
+# or, join the network that the anchore-engine deployment is using
+# networks:
+#  enterprise_default:
+#    external: true
+
+services:
+  dind:
+    image: docker:dind
+    privileged: true
+    ports:
+      - "2376:2376"
+    networks:
+      jenkins:
+        aliases:
+          - docker
+    volumes:
+      - jenkins-data-volume/:/var/jenkins_home
+      - jenkins-docker-certs-volume/:/certs/client
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/docker", "version"]
+    restart: unless-stopped
+
+  jenkins:
+    image: 'jenkinsci/blueocean:latest'
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    networks:
+      - jenkins
+    volumes:
+      - jenkins-data-volume/:/var/jenkins_home
+      - jenkins-docker-certs-volume/:/certs/client
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://127.0.0.1:8080/login"]
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+    restart: unless-stopped
