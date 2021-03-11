@@ -34,6 +34,7 @@ networks:
 services:
   dind:
     image: docker:dind
+    container_name: dind
     privileged: true
     ports:
       - "2376:2376"
@@ -52,6 +53,7 @@ services:
 
   jenkins:
     image: 'jenkinsci/blueocean:latest'
+    container_name: jenkins
     ports:
       - "8080:8080"
       - "50000:50000"
