@@ -2,14 +2,21 @@
 
 This is a very rough demo of integrating Jenkins, Grype, and Jira.  This repo will open Jira tickets for vulnerabilties that have reported fixes in the images we scan. 
 
-## Part 1: Jenkins Setup
+## Part 1: Deploy Jenkins
+
+### Option A: simple docker run
 
 We're going to run jenkins in a container to make this fairly self-contained and easily disposable.  This command will run jenkins and bind to the host's docker sock (if you don't know what that means, don't worry about it, it's not important).
 
-`$ docker run -u root -d --name jenkins --rm -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/jenkins-data:/var/jenkins_home jenkinsci/blueocean
-`
+`$ docker run -u root -d --name jenkins --rm -p 8080:8080 -p 50000:50000 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/jenkins-data:/var/jenkins_home jenkinsci/blueocean`
 
-and we'll need to install jq in the jenkins container:
+### Option B: Docker Compose
+
+If you're comfortable with Docker Compose, there's a compose file in this repo that will spin up jenkins and docker-in-docker.  The advantage of using this over Option A is that cleanup will be a lot easier, you just throw the docker-in-docker container away when you're done.  
+
+## Part 2: Jenkins Setup
+
+We'll need to install jq in the jenkins container:
 
 `$ docker exec jenkins apk add jq`
 
@@ -23,6 +30,7 @@ Once Jenkins is up and running, we have just a few things to configure:
 	- click “global” and “add credentials”
 	- Use your Docker Hub username and password (get an access token from Docker Hub if you are using multifactor authentication), and set the ID of the credential to “Docker Hub”.
 - Create a credential with your Jira username and password (mine is called "jira-cred" - you may need to edit the jenkinsfile to relfect your credential's name)
+
 
 ## Part 2: Get Syft and Grype 
 We can download the binaries directly into our bind mount directory we created we spun up the jenkins container:
